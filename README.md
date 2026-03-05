@@ -1,79 +1,64 @@
-# Laravel + React Native Docker Setup 🐳⚙️
+```conf
+server {
+    listen 80; 
+    server_name localhost;
+    root /var/www/app/public;
 
-> Docker konfiguráció Laravel backend és React Native frontend alkalmazáshoz
+    index index.php index.html index.htm;
 
-## 🎯 Projekt célja
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
 
-Ez a repository egy kísérleti Docker környezet beállítását tartalmazza Laravel és React Native alkalmazásokhoz. A cél egy konténerizált fejlesztői környezet létrehozása, amely megkönnyíti a lokális fejlesztést és a későbbi deployment folyamatot.
+    location ~ /\.(env|git|htaccess) {
+        deny all;
+    }
 
-## 📦 Tartalom
+    location ~ ^/(storage|vendor) {
+        deny all;
+    }
 
-A projekt Docker konfigurációkat tartalmaz:
-- **Laravel backend** - PHP-alapú backend API
-- **React Native frontend** - Modern frontend alkalmazás
-- **PostgreSQL** - Adatbázis konfiguráció
-- **Nginx** - Webszerver
 
-## 🛠️ Fájlok
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_pass php-fpm:9000;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    }
 
-- `Dockerfile.laravel` - Laravel konténer konfiguráció
-- `Dockerfile.react` - React Native konténer konfiguráció
-- `docker-compose.yml` - Szolgáltatások
-- `nginx.conf` - Nginx webszerver beállítások
-- `postgresql.conf` - PostgreSQL adatbázis konfiguráció
-- `.env.example` - Környezeti változók sablon
-
-## 🚀 Használat
-
-```bash
-# Projekt klónozása
-git clone https://github.com/bencso/laravel-react-docker.git
-cd docker-laravel-reactnative
-
-# Környezeti változók beállítása
-cp .env.example .env
-
-# Konténerek indítása
-docker-compose up -d
-
-# Konténerek leállítása
-docker-compose down
+    error_log  /var/log/nginx/error.log;
+    access_log /var/log/nginx/access.log;
+}
 ```
 
-## 💡 Funkciók
+- **listen: 80** -> port
+- **server_name:** -> szervernév
+- **root:** -> gyökérkönyvtár
+- **index:** -> index fájlok
+- **location /:** -> hely
+- **try_files** -> fájl keresés:
+    - ez úgy müködik, hogy megnézzük elsőnek hogy van e ilyen fájl, után hogy mappa és végül ha nincs semmi akkor átirányít az index.php-ra
+        - Azt olvastam, hogy ez a beállítás Larvel-hez kell, és ez a: front controller pattern
+- **fastcgi:**
+        -> Alap FastCGI környezeti változók, utána pedig a php-fpm szükséges változók
+        -> PHP-FPM szerver címe és portja (default: 9000 PORT),
+        -> megmondjuk például melyik fájlt futtassa a PHP-FPM
 
-- 🐳 **Docker Compose** - Egyszerű multi-container
-- 🔄 **Hot Reload** - Automatikus újratöltés fejlesztés közben
-- 🗄️ **PostgreSQL** - Modern relációs adatbázis
-- 🌐 **Nginx** - Hatékony webszerver
+- **Logolások:**
+    - error_log: -> hiba napló helye
+    - access_log: -> hozzáférési napló helye
 
-## 🎓 Tanulási célok
+```
+    location ~ /\.(env|git|htaccess) {
+        deny all;
+    }
 
-A projekt során gyakoroltam:
-- Docker és Docker Compose használatát
-- Multi-container alkalmazások konfigurálását
-- Nginx beállítását
-- Laravel és React Native konténerizálását
-- PostgreSQL beállítást
+    location ~ ^/(storage|vendor) {
+        deny all;
+    }
+```
 
-## 📄 Dokumentáció
+> Tiltja a hozzáférést az env, git, htaccess, storage és vendor fileokhoz, tulajdoképpen egy .gitignore szerűség (?!)
 
-- `NGINX.md` - Nginx konfiguráció részletesebb leírása
-
-## 📄 Licensz
-
-MIT License - Szabadon használható és módosítható
-
-***
-
-**Státusz:** 🧪 Kísérleti / Tanulási projekt
-
-***
-
-## 💭 Megjegyzések
-
-Ez egy gyakorló projekt, amelyben a Docker konténerizációt és a Laravel + React Native stack összeállítását próbáltam ki. A konfiguráció kiindulási alapként szolgálhat hasonló projektekhez.
-
-***
-
-**⭐ Ha tetszik a projekt, örülök egy csillagnak!**
+Forrás:
+- *Medium*
+- *Serverion nginx config generátor:* https://www.serverion.com/nginx-config/#?0.domain=localhost&0.index=index.html&0.fallback_html
